@@ -9,7 +9,7 @@ ANCHO = 800
 ALTO = 300
 N_BARRAS = 40
 VAL_MIN, VAL_MAX = 5, 100
-RETARDO_MS = 300  # velocidad en milisegundos
+RETARDO_MS = 50  # velocidad en milisegundos
 
 # ---------------------------
 # Algoritmo: Selection Sort
@@ -56,6 +56,7 @@ def bubble_sort_steps(vectorbs, draw_callback):
         draw_callback(activos=[])
             # Se intercambian si el elemento encontrado es mayor 
             # Luego pasa al siguiente
+
 # ---------------------------
 # Función de dibujo (énfasis)
 # ---------------------------
