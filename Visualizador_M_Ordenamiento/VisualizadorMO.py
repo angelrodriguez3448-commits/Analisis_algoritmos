@@ -1,4 +1,7 @@
 import tkinter as tk
+from tkinter import ttk
+import matplotlib.pyplot as plt #Graficas
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg #graficas junto tkinter
 import random
 import time
 
@@ -10,6 +13,11 @@ ALTO = 300
 N_BARRAS = 40
 VAL_MIN, VAL_MAX = 5, 100
 RETARDO_MS = 100  # velocidad en milisegundos
+
+#funcion para terminar procesos de tkinter
+def cerrar_ventana():
+    root.quit()
+    root.destroy()
 
 # ---------------------------
 # Algoritmo: Selection Sort
@@ -93,9 +101,13 @@ def merge_sort_steps(vectormerge, draw_callback):
                 if izq[i] < der[j]: 
                     vectormerge[k] = izq[i] 
                     i+= 1
+                    draw_callback(activos=[])
+                    yield
                 else: 
                     vectormerge[k] = der[j] 
                     j+= 1
+                    draw_callback(activos=[])
+                    yield
                 k += 1
 
                 draw_callback(activos=[k])  
@@ -183,7 +195,6 @@ def quick_sort_steps(vectorquick, draw_callback):
     draw_callback(activos=[])
 
 
-
 # ---------------------------
 # Función de dibujo (énfasis)
 # ---------------------------
@@ -215,12 +226,59 @@ def dibujar_barras(canvas, datos, activos=None):
 # ---------------------------
 # Aplicación principal
 # ---------------------------
+#estas son las opciones que se muestran en el dropbox combo
+opciones_ordenamiento=['Selection Sort','Bubble Sort', 'Merge Sort', 'Quick Sort']
+#listas necesarias para guardar informacion
+listaTiemposbubble=list([0]) #definimos la lista tiempos como una lista
+listaTiemposMerge=list([0])
+listaTiemposQuick=list([0])
+listaTiemposSelection=[0]
+listaRangoBubble=[0]
+listaRangoMerge=[0]
+listaRangoQuick=[0]
+listaRangoSelection=[0]
 datos = []
 root = tk.Tk()
 root.title("Visualizador sencillo - Selection Sort")
 
 canvas = tk.Canvas(root, width=ANCHO, height=ALTO, bg="white")
 canvas.pack(padx=10, pady=10)
+
+#haciendo graficas
+fig, ax=plt.subplots(dpi=90, figsize=(7,5), facecolor='#00faafb7')
+
+# se grafican y actualizan las graficas
+def graficar_Datos():
+    
+
+    #lugares donde se guardan los datos
+    global listaRangoSelection
+    global listaTiemposSelection
+    global listaRangoBubble
+    global listaTiemposbubble
+    global listaRangoMerge
+    global listaTiemposMerge
+    global listaRangoQuick
+    global listaTiemposQuick
+    #se limpia las etiquetas de la grafica
+    ax.clear()
+    #titulo y etiquetas
+    plt.title("Grafica comparacion",color='blue',size=16,family='Arial')#titulo grafica
+    ax.set_xlabel("Cantidad", color="black")#etiquetas en x
+    ax.set_ylabel("tiempo",color='black')#etiquetas en y
+
+    #se genera cada grafica
+    ax.plot(listaRangoSelection,listaTiemposSelection,"o--", label="Selection Sort", color='blue')
+    ax.plot(listaRangoBubble,listaTiemposbubble,"o--", label="Bubble Sort",color='red')
+    ax.plot(listaRangoMerge,listaTiemposMerge,"o--", label="Merge Sort", color='yellow')
+    ax.plot(listaRangoQuick,listaTiemposQuick,"o--", label="Quick Sort", color='black')
+    #leyenda que muestra lo que significa cada grafica
+    ax.legend(loc="upper left")
+    #grafica cuadriculada
+    ax.grid(True)
+    #dibuja la grafica
+    canvas_grafico.draw()
+    canvas_grafico.get_tk_widget().pack()
 
 def generar():
     """Genera lista de números aleatorios y dibuja."""
@@ -289,19 +347,128 @@ def ordenar_quick():
 
     paso()
 
+#mide el tiempo
+def medir_tiempo_funciones_ordenamiento(funcion):
+    inicio=time.time()
+    funcion()
+    final=time.time()
+    return final-inicio
+
+#hace la selecion de ordenamiento
+def selecionar_ordenamiento():
+    global listaRangoSelection
+    global listaTiemposSelection
+    global listaRangoBubble
+    global listaTiemposbubble
+    global listaRangoMerge
+    global listaTiemposMerge
+    global listaRangoQuick
+    global listaTiemposQuick
+    seleccion=combo.get()
+    if seleccion=='Selection Sort':
+        #se guarda la cantidad del entry
+        listaRangoSelection.append(int(entrada_barras.get()))
+        # se calcula el tiempo 
+        listaTiemposSelection.append(medir_tiempo_funciones_ordenamiento(ordenar_selection))
+        #impresiones para conocer los datos
+        print(listaRangoSelection)
+        print(listaTiemposSelection)
+        
+    elif seleccion=='Bubble Sort':
+        listaRangoBubble.append(int(entrada_barras.get()))
+        listaTiemposbubble.append(medir_tiempo_funciones_ordenamiento(ordenar_bubble))
+        #impresiones para conocer los datos
+        print(listaTiemposbubble)
+        print(listaRangoBubble)
+    elif seleccion=='Merge Sort':
+        listaRangoMerge.append(int(entrada_barras.get()))
+        listaTiemposMerge.append(medir_tiempo_funciones_ordenamiento(ordenar_merge))
+        print(listaTiemposMerge)
+        print(listaRangoMerge)
+    else:
+        listaRangoQuick.append(int(entrada_barras.get()))
+        listaTiemposQuick.append(medir_tiempo_funciones_ordenamiento(ordenar_quick))
+        print(listaTiemposQuick)
+        print(listaRangoQuick)
+    graficar_Datos()
+
+#funcion para mezclar datos
+def mezclar():
+    global datos
+    n=len(datos)
+    for i in range(n):
+        indice_aleatorio=random.randint(0,n-1)
+        temporal=datos[i]
+        datos[i]=datos[indice_aleatorio]
+        datos[indice_aleatorio]=temporal
+    dibujar_barras(canvas,datos)
+
+#funcion para cambiar el numero de barras
+def determinar_barras():
+    global N_BARRAS
+    numero_barras=int(entrada_barras.get())
+    N_BARRAS=numero_barras
+    print(N_BARRAS)
+
+# cambiar velocidad del algoritmo
+def cambiar_velocidad(valor):
+    global RETARDO_MS
+    print(valor)
+    RETARDO_MS=valor
+
 # ---------------------------
 # Botones (UI mínima)
 # ---------------------------
 panel = tk.Frame(root)
 panel.pack(pady=6)
 tk.Button(panel, text="Generar", command=generar).pack(side="left", padx=5)
-tk.Button(panel, text="Ordenar (Selection)", command=ordenar_selection).pack(side="left", padx=5)
+#botton para mezclar
+boton_mezclar=tk.Button(panel,text='Mezclar',command=mezclar)
+boton_mezclar.pack(side ="left",pady=10,padx=30)
+"""tk.Button(panel, text="Ordenar (Selection)", command=ordenar_selection).pack(side="left", padx=5)
 tk.Button(panel, text="Ordenar (Bubble)", command=ordenar_bubble).pack(side="left", padx=5)
 tk.Button(panel, text="Ordenar (Merge)", command=ordenar_merge).pack(side="left", padx=5)
-tk.Button(panel, text="Ordenar (Quick)", command=ordenar_quick).pack(side="left", padx=5)
+tk.Button(panel, text="Ordenar (Quick)", command=ordenar_quick).pack(side="left", padx=5)"""
+#boton ordenar lista de numeros
+boton_ordenar=tk.Button(panel,text="Ordenar ", command= selecionar_ordenamiento)
+boton_ordenar.pack(side='left') 
+combo=ttk.Combobox(panel,values=opciones_ordenamiento, state="readonly")
+combo.pack(pady=10,side='left')#enpaqutado del dropbox
+combo.current(0)#opcion por defecto selection sort
+
+#nuevo panel para escoger las barras
+panel_bottom=tk.Frame(root)
+panel_bottom.pack(pady=6)
+#texto para decirle al usuario que esta haciendo
+texto_entrada_barras=tk.Label(panel_bottom,text="Introduce el numero de barras")
+texto_entrada_barras.pack(pady=10,side='left')
+#entrada de datos ENTRY
+entrada_barras=tk.Entry(panel_bottom)
+entrada_barras.insert(0,'40')#valor por default
+entrada_barras.pack(side="left")
+#boton para confirmar los datos
+boton_barras=tk.Button(panel_bottom,text="Confirmar",command=determinar_barras)
+boton_barras.pack(side="left",padx=10)
+#texto para Velocidad
+texto_velocidad=tk.Label(panel,text="Velocidad(0ms-200ms)")
+texto_velocidad.pack(padx=30)
+#Scale de velocidad
+escala_velocidad=tk.Scale(panel,from_=0,to=200,showvalue=False,orient='horizontal',command=cambiar_velocidad)
+escala_velocidad.pack(padx=30)
+
+#botton para limpiar resaltados
+boton_limpiar_resaltado=tk.Button(panel_bottom, text="Limpiar Resaltado")
+boton_limpiar_resaltado.pack(pady=10)
+#panel para graficos con canvas
+panel_grafico=tk.Frame(root)
+panel_grafico.pack(pady=10)
+#definimos grafico
+canvas_grafico=FigureCanvasTkAgg(fig, master=panel_grafico)
 
 # ---------------------------
 # Estado inicial
 # ---------------------------
 generar()       # crea y dibuja datos al abrir
+#para que se pueda cerrar la ventana
+root.protocol("WM_DELETE_WINDOW",cerrar_ventana)
 root.mainloop() # inicia la app
