@@ -12,7 +12,7 @@ ANCHO = 800
 ALTO = 300
 N_BARRAS = 40
 VAL_MIN, VAL_MAX = 5, 100
-RETARDO_MS = 100  # velocidad en milisegundos
+RETARDO_MS = 0  # velocidad en milisegundos
 
 #funcion para terminar procesos de tkinter
 def cerrar_ventana():
