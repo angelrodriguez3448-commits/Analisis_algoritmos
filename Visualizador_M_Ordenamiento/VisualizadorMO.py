@@ -12,8 +12,8 @@ ANCHO = 800
 ALTO = 300
 N_BARRAS = 40
 VAL_MIN, VAL_MAX = 5, 100
-RETARDO_MS = 100  # velocidad en milisegundos
-
+RETARDO_MS = 0  # velocidad en milisegundos
+continuar_programa=True #variable para que se ejecute el yield o se detenga
 #funcion para terminar procesos de tkinter
 def cerrar_ventana():
     root.quit()
@@ -288,19 +288,31 @@ def generar():
     dibujar_barras(canvas, datos)
 
 def ordenar_selection():
+    global continuar_programa
     """Ejecuta la animación del Selection Sort usando un generador + after()."""
     if not datos:
         return
     gen = selection_sort_steps(datos, lambda activos=None: dibujar_barras(canvas, datos, activos))
 
     def paso():
+        global continuar_programa
         try:
-            next(gen)                           # avanza un paso del algoritmo
-            root.after(RETARDO_MS, paso)        # agenda el siguiente paso
-        except StopIteration:
-            pass  # terminó
+            if continuar_programa:# si el programa continua se hacen los next
+                next(gen)                           # avanza un paso del algoritmo
+                root.after(RETARDO_MS, paso) # agenda el siguiente paso
+            else:#de lo contrario 
+                dibujar_barras(canvas,datos)#dibujamos las barras sin colores
+                listaRangoSelection.pop()#eliminamos los ultimos datos dados para hacer la grafica (asi el ordenamiento que escogimos ya no aparecera)
+                listaTiemposSelection.pop()
+                continuar_programa=True#por ultimo ponemos la bandera como verdadera
+        except StopIteration: #si logra hacer todos los next del yield va a graficar la tabla
+                graficar_Datos()  # terminó
 
     paso()
+
+
+    
+
 
 def ordenar_bubble():
     """Ejecuta la animación del Selection Sort usando un generador + after()."""
@@ -309,11 +321,18 @@ def ordenar_bubble():
     gen = bubble_sort_steps(datos, lambda activos=None: dibujar_barras(canvas, datos, activos))
 
     def paso():
+        global continuar_programa
         try:
-            next(gen)                           # avanza un paso del algoritmo
-            root.after(RETARDO_MS, paso)        # agenda el siguiente paso
+            if continuar_programa:
+                next(gen)                           # avanza un paso del algoritmo
+                root.after(RETARDO_MS, paso)# agenda el siguiente paso
+            else:
+                dibujar_barras(canvas,datos)
+                listaRangoBubble.pop()
+                listaTiemposbubble.pop()
+                continuar_programa=True
         except StopIteration:
-            pass  # terminó
+            graficar_Datos()
 
     paso()
 
@@ -324,11 +343,18 @@ def ordenar_merge():
     gen = merge_sort_steps(datos, lambda activos=None: dibujar_barras(canvas, datos, activos))
 
     def paso():
+        global continuar_programa
         try:
-            next(gen)                           # avanza un paso del algoritmo
-            root.after(RETARDO_MS, paso)        # agenda el siguiente paso
+            if continuar_programa:  
+                next(gen)                           # avanza un paso del algoritmo
+                root.after(RETARDO_MS, paso)        # agenda el siguiente paso
+            else:
+                dibujar_barras(canvas,datos)
+                listaRangoMerge.pop()
+                listaTiemposMerge.pop()
+                continuar_programa=True
         except StopIteration:
-            pass  # terminó
+            graficar_Datos()
 
     paso()
 
@@ -339,13 +365,20 @@ def ordenar_quick():
     gen = quick_sort_steps(datos, lambda activos=None: dibujar_barras(canvas, datos, activos))
 
     def paso():
+        global continuar_programa
         try:
-            next(gen)                           # avanza un paso del algoritmo
-            root.after(RETARDO_MS, paso)        # agenda el siguiente paso
+            if continuar_programa:
+                next(gen)                           # avanza un paso del algoritmo
+                root.after(RETARDO_MS, paso)        # agenda el siguiente paso
+            else:
+                listaRangoQuick.pop()
+                listaTiemposQuick.pop()
+
         except StopIteration:
-            pass  # terminó
+            graficar_Datos()  # terminó
 
     paso()
+    
 
 #mide el tiempo
 def medir_tiempo_funciones_ordenamiento(funcion):
@@ -353,7 +386,9 @@ def medir_tiempo_funciones_ordenamiento(funcion):
     funcion()
     final=time.time()
     return final-inicio
-
+def detener_animacion():
+    global continuar_programa
+    continuar_programa=False
 #hace la selecion de ordenamiento
 def selecionar_ordenamiento():
     global listaRangoSelection
@@ -364,33 +399,28 @@ def selecionar_ordenamiento():
     global listaTiemposMerge
     global listaRangoQuick
     global listaTiemposQuick
+    global continuar_programa
     seleccion=combo.get()
     if seleccion=='Selection Sort':
         #se guarda la cantidad del entry
         listaRangoSelection.append(int(entrada_barras.get()))
         # se calcula el tiempo 
         listaTiemposSelection.append(medir_tiempo_funciones_ordenamiento(ordenar_selection))
-        #impresiones para conocer los datos
-        print(listaRangoSelection)
-        print(listaTiemposSelection)
+    
         
     elif seleccion=='Bubble Sort':
         listaRangoBubble.append(int(entrada_barras.get()))
         listaTiemposbubble.append(medir_tiempo_funciones_ordenamiento(ordenar_bubble))
-        #impresiones para conocer los datos
-        print(listaTiemposbubble)
-        print(listaRangoBubble)
+
     elif seleccion=='Merge Sort':
         listaRangoMerge.append(int(entrada_barras.get()))
         listaTiemposMerge.append(medir_tiempo_funciones_ordenamiento(ordenar_merge))
-        print(listaTiemposMerge)
-        print(listaRangoMerge)
+    
     else:
         listaRangoQuick.append(int(entrada_barras.get()))
         listaTiemposQuick.append(medir_tiempo_funciones_ordenamiento(ordenar_quick))
-        print(listaTiemposQuick)
-        print(listaRangoQuick)
-    graficar_Datos()
+   
+
 
 #funcion para mezclar datos
 def mezclar():
@@ -408,12 +438,11 @@ def determinar_barras():
     global N_BARRAS
     numero_barras=int(entrada_barras.get())
     N_BARRAS=numero_barras
-    print(N_BARRAS)
+    
 
 # cambiar velocidad del algoritmo
 def cambiar_velocidad(valor):
     global RETARDO_MS
-    print(valor)
     RETARDO_MS=valor
 
 # ---------------------------
@@ -457,7 +486,7 @@ escala_velocidad=tk.Scale(panel,from_=0,to=200,showvalue=False,orient='horizonta
 escala_velocidad.pack(padx=30)
 
 #botton para limpiar resaltados
-boton_limpiar_resaltado=tk.Button(panel_bottom, text="Limpiar Resaltado")
+boton_limpiar_resaltado=tk.Button(panel_bottom, text="Limpiar Resaltado",command=detener_animacion)
 boton_limpiar_resaltado.pack(pady=10)
 #panel para graficos con canvas
 panel_grafico=tk.Frame(root)
